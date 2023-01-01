@@ -1,0 +1,20 @@
+﻿@using Microsoft.AspNetCore.Identity;
+@inject SignInManager<User> SignInManager
+@inject UserManager<User> UserManager
+<div class="container">
+    <h1>Admin Page</h1>
+    <p>Welcome to the admin page. You have access to all the admin features.</p>
+    @if (User.Identity.IsAuthenticated)
+    {
+        <span>@User.Identity.Name | @User.IsInRole("Admin") | @User.IsInRole("user")</span>
+    }
+    @if (SignInManager.IsSignedIn(User))
+    {
+        <h3>YOu are loged in @UserManager.GetUserName(User)</h3>
+
+    }  @* @await UserManager.GetUsersInRoleAsync(User).ToString()*@
+    else
+    {
+        <h3>You are not loged in</h3>
+    }
+</div>

@@ -1,0 +1,18 @@
+﻿@using Microsoft.AspNetCore.Identity;
+@inject SignInManager<User> SignInManager
+@inject UserManager<User> UserManager
+@{
+    ViewData["Title"] = "Privacy Policy";
+}
+<h1>@ViewData["Title"]</h1>
+
+<p>Use this page to detail your site's privacy policy.</p>
+@if (SignInManager.IsSignedIn(User))
+{
+    <h3>YOu are loged in @UserManager.GetUserName(User)</h3>
+
+}
+else
+{
+   <h3>You are not loged in</h3>
+}

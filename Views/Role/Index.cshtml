@@ -1,0 +1,25 @@
+﻿@model IEnumerable<Role>
+
+<table class="table">
+    <a asp-controller="Role" class="btn btn-primary" asp-action="Create">Create Role</a>
+
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>IsAdmin</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var role in Model)
+        {
+            <tr>
+                <td>@role.Name</td>
+                <td>@role.IsAdmin</td>
+                <td>
+                    <a asp-controller="Role" asp-action="Edit" asp-route-id="@role.Id" class="btn btn-primary btn-sm">Edit</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
