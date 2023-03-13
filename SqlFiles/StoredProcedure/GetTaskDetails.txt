@@ -1,0 +1,19 @@
+﻿CREATE PROCEDURE GetTaskDetails
+(
+ @taskId UNIQUEIDENTIFIER
+ 
+)
+AS
+
+BEGIN
+	SELECT	t.Id AS TaskId,
+			t.CreatedById ,
+			t.Description,
+			t.Name,
+			tu.Status,
+			u.UserName AS AssignedTo
+	FROM Tasks t
+	JOIN TasksUser tu on t.Id=tu.TasksId
+	JOIN AspNetUsers u ON tu.EmployeesId= u.Id
+	WHERE t.Id= ISNULL(@taskId, t.Id)
+END

@@ -68,7 +68,7 @@ namespace IdentityPractice.Controllers
             _db.SaveChanges();
             return RedirectToAction(nameof(Index));
 
-            return View(role);
+           // return View(role);
 
 
         }

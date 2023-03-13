@@ -1,36 +1,29 @@
-﻿using Application.ViewModels;
-using Domain.Models;
-using Infrastructure.Data;
-
-using Microsoft.AspNetCore.Identity;
+﻿using Application.Interface.Data;
+using Application.Interface.Service;
+using Application.ViewModels;
+using Application.ViewModels.Account;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.AspNetCore.Rewrite;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage.ValueConversion.Internal;
-using Microsoft.Extensions.Configuration.UserSecrets;
+using System.Data;
 
 namespace IdentityPractice.Controllers
 {
     public class AccountController : Controller
     {
 
-        private readonly UserManager<User> _userManager; // For Adding user functionality
-        private readonly RoleManager<Role> _roleManager;  // for Role Functionality  
-        private readonly ApplicationDbContext _db;
-        private readonly SignInManager<User> _signInManager; // For Signing in and displayig user
+        private readonly IUserService _userService;
+        private readonly IRoleService _roleService;
+    private readonly IRoleRepository _roleRepository;
 
-        public AccountController(UserManager<User> userManager, SignInManager<User> signInManager, RoleManager<Role> roleManager, ApplicationDbContext db)
+        public AccountController(IUserService userService,
+                                    IRoleService roleService,
+                             IRoleRepository roleRepository)
         {
-            _userManager = userManager;
-            _signInManager = signInManager;
-            _roleManager = roleManager;
-            _db = db;
+            _userService = userService;
+            _roleService = roleService;
+        _roleRepository = roleRepository;
         }
-        public IActionResult Index()
-        {
-            return View();
-        }
+      
         [HttpGet]
         public IActionResult Login(string? returnUrl = null)
         {
@@ -38,9 +31,6 @@ namespace IdentityPractice.Controllers
             loginViewModel.ReturnUrl = returnUrl ?? Url.Content("~/");
             return View(loginViewModel);
         }
-
-
-
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -51,29 +41,20 @@ namespace IdentityPractice.Controllers
                 ModelState.AddModelError(string.Empty, "Model state is not valid");
                 return View(loginViewModel);
             }
-
-            var user = _db.User.FirstOrDefault(u => u.UserName == loginViewModel.UserName);
-            if (user == null)
+            var userExists = _userService.GetUserIdByName(loginViewModel.UserName);
+            if (userExists.Equals(Guid.Empty))
             {
-                ModelState.AddModelError(string.Empty, "The user does not exist");
+                ModelState.AddModelError(string.Empty, "User DoesNot Exist, Please Register First ");
                 return View(loginViewModel);
             }
-
-            var result = await _signInManager.PasswordSignInAsync(loginViewModel.UserName, loginViewModel.Password,
-                         isPersistent: loginViewModel.RememberMe, lockoutOnFailure: false);
-            if (!result.Succeeded)
+            await _userService.Login(loginViewModel);
+            if (loginViewModel.UserName == null)
             {
-                ModelState.AddModelError(string.Empty, "Cannot login");
+                ModelState.AddModelError(string.Empty, "Username is null");
                 return View(loginViewModel);
             }
-
-            //  var userRole = _db.UserRoles.FirstOrDefault(u => u.UserId == user.Id).RoleId;
-
-            var role = (from ur in _db.UserRoles
-                        join r in _db.Role on ur.RoleId equals r.Id
-                        where ur.UserId == user.Id && r.IsAdmin == true
-                        select r.IsAdmin).FirstOrDefault();
-
+            var logedInUserId = _userService.GetUserIdByName(loginViewModel.UserName);
+            var role = _roleRepository.IsAdmin(logedInUserId);
             if (role == true)
             {
                 return RedirectToAction("Index", "Admin");
@@ -82,17 +63,17 @@ namespace IdentityPractice.Controllers
             {
                 return RedirectToAction("Index", "Employee");
             }
+      
         }
         public async Task<IActionResult> Register(string? returnUrl = null)
         {
-
-            var roles = await _db.Role.ToListAsync();
+            //var roles = await _db.Role.ToListAsync();
+            var roles = await _roleService.AllRoles();
             var listItems = roles.Select(role => new SelectListItem
             {
                 Value = role.Id.ToString(),
                 Text = role.Name
             }).ToList();
-
 
             RegisterViewModel registerViewModel = new RegisterViewModel();
             registerViewModel.RoleList = listItems;
@@ -109,50 +90,22 @@ namespace IdentityPractice.Controllers
 
             if (ModelState.IsValid)
             {
-                // Check if the user already exists
-                var existingUser = _db.Users.FirstOrDefault(u => u.UserName == registerViewModel.UserName || u.Email == registerViewModel.Email);
-                if (existingUser != null)
-                {
-                    ModelState.AddModelError(string.Empty, "A user with the same username or email address already exists.");
-                    return View(registerViewModel);
-                }
-
-                // Check if the selected role is valid
-                var role = _db.Roles.FirstOrDefault(r => r.Id.ToString() == registerViewModel.RoleSelected);
+                //<check if role exists or not
+                var role = await _roleService.CheckIfExists(registerViewModel);
                 if (role == null)
                 {
-                    ModelState.AddModelError(string.Empty, "The selected role is invalid.");
-                    return View(registerViewModel);
+                    ModelState.AddModelError(string.Empty, "Role Doesnot exists");
                 }
+               var result = await _userService.Register(registerViewModel);
+                if (result.sucess)
+                {
+                   
+                    return RedirectToAction("Login", "Account");
+                }
+                ModelState.AddModelError(string.Empty, "Couldn't Register the user");
+                return RedirectToAction("Register", "Account" );
+              
 
-                // Create the user
-                var user = new User { UserName = registerViewModel.UserName, Email = registerViewModel.Email };
-                var result = await _userManager.CreateAsync(user, registerViewModel.Password);
-                if (result.Succeeded)
-                {
-                    // Assign the selected role to the user
-                    var roleResult = await _userManager.AddToRoleAsync(user, role.ToString());
-                    if (roleResult.Succeeded)
-                    {
-                        return RedirectToAction("Index", "Home");
-                    }
-                    else
-                    {
-                        await _userManager.DeleteAsync(user);
-                        //  _db.Users.Remove(user);
-                        foreach (var error in roleResult.Errors)
-                        {
-                            ModelState.AddModelError(string.Empty, error.Description);
-                        }
-                    }
-                }
-                else
-                {
-                    foreach (var error in result.Errors)
-                    {
-                        ModelState.AddModelError(string.Empty, error.Description);
-                    }
-                }
             }
 
             return View(registerViewModel);
@@ -161,8 +114,8 @@ namespace IdentityPractice.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> LogOut()
         {
-            await _signInManager.SignOutAsync();
-            return RedirectToAction("Index", "Home");
+            _userService.Logout();
+            return RedirectToAction("Login", "Account");
         }
     }
 

@@ -1,0 +1,6 @@
+﻿CREATE VIEW [dbo].[vw_Admin_List]
+AS
+	select * 
+	from AspNetRoles r
+	join AspNetUserRoles ur on ur.RoleId=r.Id
+	where r.IsAdmin=

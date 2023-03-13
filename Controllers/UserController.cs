@@ -10,7 +10,7 @@ using System.Data;
 namespace IdentityPractice.Controllers
 {
 
-    [Authorize(Roles = "Admin")]
+
     public class UserController : Controller
     {
         private readonly ApplicationDbContext _db;

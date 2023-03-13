@@ -1,0 +1,30 @@
+﻿@using Application.ViewModels.ActivityLog;
+@model ActivityLogWithTimeViewModel
+
+@{
+    ViewData["Title"] = "Activity Log";
+}
+
+<h1>Activity Log</h1>
+<h4> Total Time : @Model.TotalTime.ToString("hh\\:mm\\:ss")    </h4>
+<table class="table table-borderless">
+    
+    <tr>
+       
+        <th>Task Name</th>
+        <th>Action</th>
+        <th>Done At </th>
+       
+    </tr>
+    @foreach (var item in Model.ActivityLogs)
+    {
+     
+        <tr>
+            <td>@item.Name</td>
+            <td>@item.Action</td>
+            <td>@item.ActivityTime</td>
+            <td></td>
+        </tr>
+
+    }
+</table>
