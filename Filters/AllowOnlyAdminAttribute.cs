@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
-using System.Reflec tion;
+using System.Reflection;
 
 namespace IdentityPractice.Filters
 {
@@ -12,7 +12,7 @@ namespace IdentityPractice.Filters
         }
         public void OnAuthorization(AuthorizationFilterContext context)
         {
-       
+           
         }
     }
 }

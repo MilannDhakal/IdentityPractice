@@ -2,12 +2,14 @@
 using Application.Interface.Service;
 using Application.ViewModels.Tasks;
 using Domain.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace IdentityPractice.Controllers
 {
+
     public class TaskController : Controller
     {
         private readonly IUserService _userService;
@@ -44,11 +46,10 @@ namespace IdentityPractice.Controllers
         public async Task<IActionResult> Index()
         {
             // Get Logedin User id
-           HttpClient client = new HttpClient();
 
             var logedInUserId = _userManager.GetUserId(HttpContext.User);
             var role = _roleRepository.IsAdmin(Guid.Parse(logedInUserId));
-            if (role == true)
+            if (role is true)
             {
                 var tasks = _taskRepository.GetAllTasks();
                 return View(tasks);
@@ -66,8 +67,10 @@ namespace IdentityPractice.Controllers
             var details =  _taskRepository.GetTaskDetails(Guid.Parse(Id));
             return View(details);
         }
+        
         public async Task<IActionResult> Create()
         {
+            var claim = User.Claims.ToList();
             List<Guid> guidList = new List<Guid>();
             var emp = await _userService.GetEmployees();
             var listItem = new MultiSelectList
