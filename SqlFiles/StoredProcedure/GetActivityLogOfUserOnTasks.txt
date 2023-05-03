@@ -1,0 +1,17 @@
+﻿CREATE OR ALTER PROCEDURE GetActivityLogOfUserOnTask
+(
+@userId UNIQUEIDENTIFIER,
+@taskId UNIQUEIDENTIFIER
+)
+AS 
+BEGIN
+	SELECT	t.Name,
+			al.ActivityTime,
+			al.Action
+	FROM Tasks t
+	join TasksUser tu on t.Id=tu.TasksId
+	join ActivityLog al on tu.Id = al.TasksUserId
+	where 
+		tu.EmployeesId= ISNULL(@userId, tu.EmployeesId) AND tu.TasksId= ISNULL(@taskId, tu.TasksId); 
+
+END

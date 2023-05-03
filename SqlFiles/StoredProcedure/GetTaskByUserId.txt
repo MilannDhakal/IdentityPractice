@@ -1,0 +1,19 @@
+﻿CREATE PROCEDURE [dbo].[GetTaskByUserId] 
+(
+@userId UNIQUEIDENTIFIER 
+)
+AS
+BEGIN
+	SELECT  t.Id AS TaskId,
+			t.Name AS TaskName,
+			t.CreatedById,
+			t.Description,
+			tu.Id AS TaskUserId,
+			tu.Status 
+			
+	FROM TasksUser tu 
+	JOIN Tasks t
+	ON t.id=tu.TasksId
+	WHERE TU.EmployeesId= ISNULL(@userId, tu.EmployeesId)
+
+END
